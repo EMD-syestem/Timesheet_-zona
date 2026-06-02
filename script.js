@@ -557,7 +557,7 @@ function hitungLembur() {
   };
 
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec",
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec",
     {
       method: "POST",
       body: JSON.stringify(data)
@@ -692,7 +692,7 @@ function showSection(sectionId) {
 
 function loadReport() {
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read"
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=readWithRow"
   )
     .then((response) => response.json())
 
@@ -707,7 +707,10 @@ function loadReport() {
 
       tbody.innerHTML = "";
 
-      data.forEach((row) => {
+      data.forEach((item) => {
+        const row = item.data;
+
+        const rowNumber = item.rowNumber;
         let tr = document.createElement("tr");
 
         /* ================= FORMAT TANGGAL ================= */
@@ -761,7 +764,19 @@ function loadReport() {
         <td>${row[16] || ""}</td>
         <td>${row[17] || ""}</td>
 
-        <td>${row[18] || ""}</td>
+      <td>${row[18] || ""}</td>
+
+<td>
+
+  <button
+    class="delete-btn"
+    onclick="deleteReport(${rowNumber})">
+
+    🗑 Hapus
+
+  </button>
+
+</td>
 
       `;
 
@@ -773,7 +788,28 @@ function loadReport() {
       console.error("Gagal load report:", error);
     });
 }
+function deleteReport(rowNumber) {
+  const konfirmasi = confirm("Yakin ingin menghapus data ini?");
 
+  if (!konfirmasi) return;
+
+  fetch(
+    `https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=delete&row=${rowNumber}`
+  )
+    .then((response) => response.json())
+    .then((result) => {
+      if (result.success) {
+        alert("Data berhasil dihapus");
+
+        loadReport();
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+
+      alert("Gagal menghapus data");
+    });
+}
 /* ================= FILTER TANGGAL ================= */
 
 function filterTanggal() {
@@ -786,7 +822,7 @@ function filterTanggal() {
   const sampai = document.getElementById("filterEndDate").value;
 
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read"
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=read"
   )
     .then((response) => response.json())
 
@@ -1131,7 +1167,7 @@ function filterMonthlyReport() {
   ===================================================== */
 
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read"
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=read"
   )
     .then((response) => response.json())
 
@@ -1268,7 +1304,7 @@ function filterMonthlyReport() {
 
 function loadMonthlyReport() {
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read"
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=read"
   )
     .then((response) => response.json())
 
@@ -1558,11 +1594,11 @@ async function downloadMonthlyTableAsExcel(bodyTableId, filename) {
 function generateDriverMatrix() {
   Promise.all([
     fetch(
-      "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read"
+      "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=read"
     ).then((response) => response.json()),
 
     fetch(
-      "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=readDinasLuar"
+      "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=readDinasLuar"
     ).then((response) => response.json())
   ])
 
@@ -2224,7 +2260,7 @@ function generateOvertimeChart() {
   const ctx = canvas.getContext("2d");
 
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read",
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=read",
     {
       method: "GET",
       mode: "cors"
@@ -2537,7 +2573,7 @@ function generateDriverChart() {
   const ctx = canvas.getContext("2d");
 
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec?action=read"
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec?action=read"
   )
     .then((response) => response.json())
 
@@ -2726,7 +2762,7 @@ function submitDinasLuar() {
   };
 
   fetch(
-    "https://script.google.com/macros/s/AKfycbwSm2CAdQG5J0dLd65jHDlzY7ytVa5LWNOGGYrpC5vwD7LcQ2vtSCvAXPubsZFRO1w/exec",
+    "https://script.google.com/macros/s/AKfycbxzXK7xKEmwi9ahmect4UEqQSU81Rw44eZQdmYJRWYCO4unXXON8CUHzEsoBRcpg24T/exec",
     {
       method: "POST",
       body: JSON.stringify(data)
