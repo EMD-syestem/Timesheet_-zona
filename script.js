@@ -2244,12 +2244,41 @@ async function downloadDriverMatrixExcel() {
     `Driver_Matrix_${new Date().toISOString().split("T")[0]}.xlsx`
   );
 }
+
+function filterOvertimeChart() {
+  const startDate = document.getElementById("chartStartDate").value;
+
+  const endDate = document.getElementById("chartEndDate").value;
+
+  generateOvertimeChart(startDate, endDate);
+}
+function loadCurrentMonthChart() {
+  const now = new Date();
+
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  document.getElementById(
+    "chartStartDate"
+  ).value = firstDay.toISOString().split("T")[0];
+
+  document.getElementById("chartEndDate").value = lastDay
+    .toISOString()
+    .split("T")[0];
+
+  generateOvertimeChart(
+    document.getElementById("chartStartDate").value,
+
+    document.getElementById("chartEndDate").value
+  );
+}
 /* ================= GLOBAL CHART ================= */
 let overtimeChart;
 let overtimeLineChart;
 
 /* ================= GENERATE CHART ================= */
-function generateOvertimeChart() {
+function generateOvertimeChart(startDate = null, endDate = null) {
   const canvas = document.getElementById("overtimeLineChart");
 
   if (!canvas) {
@@ -2284,45 +2313,93 @@ function generateOvertimeChart() {
         throw new Error("Data bukan array!");
       }
 
-      const monthlySummary = {};
+      /* ================= FILTER DATA ================= */
+
+      let filteredData = [...data];
+
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(endDate);
+
+        end.setHours(23, 59, 59, 999);
+
+        filteredData = data.filter((row) => {
+          if (!row[1]) return false;
+
+          const rowDate = new Date(row[1]);
+
+          rowDate.setHours(0, 0, 0, 0);
+
+          return rowDate >= start && rowDate <= end;
+        });
+      }
 
       /* ================= SUMMARY ================= */
-      data.forEach((row) => {
+
+      const monthlySummary = {};
+
+      filteredData.forEach((row) => {
         const driver = row[0] || "Unknown";
-        const jamKerja = parseFloat(row[3]) || 0;
-        const jamLembur = parseFloat(row[5]) || 0;
+
+        const jamKerja = Number(row[3]) || 0;
+
+        const hasilPerkalianLembur = Number(row[5]) || 0;
 
         if (!monthlySummary[driver]) {
           monthlySummary[driver] = {
             totalJamKerja: 0,
+
             totalJamLembur: 0
           };
         }
 
         monthlySummary[driver].totalJamKerja += jamKerja;
-        monthlySummary[driver].totalJamLembur += jamLembur;
+
+        monthlySummary[driver].totalJamLembur += hasilPerkalianLembur;
       });
+      console.table(
+        Object.keys(monthlySummary).map((driver) => ({
+          driver,
+
+          totalJamKerja: monthlySummary[driver].totalJamKerja,
+
+          totalJamLembur: monthlySummary[driver].totalJamLembur
+        }))
+      );
 
       /* ================= SORT ================= */
+
       const sortedDrivers = Object.keys(monthlySummary)
         .map((driver) => ({
           driver,
-          lembur: monthlySummary[driver].totalJamLembur,
-          jamKerja: monthlySummary[driver].totalJamKerja
+
+          totalJamKerja: monthlySummary[driver].totalJamKerja,
+
+          totalJamLembur: monthlySummary[driver].totalJamLembur
         }))
-        .sort((a, b) => b.lembur - a.lembur);
+        .sort((a, b) => b.totalJamLembur - a.totalJamLembur);
 
-      const sortedLabels = sortedDrivers.map((i) => i.driver);
-      const sortedOvertime = sortedDrivers.map((i) => i.lembur);
-      const sortedWorkHours = sortedDrivers.map((i) => i.jamKerja);
+      /* ================= DATA CHART ================= */
 
-      /* ================= SELISIH ================= */
-      const overtimeDifferences = sortedOvertime.map((value, index, arr) => {
+      const sortedLabels = sortedDrivers.map((item) => item.driver);
+
+      const sortedLembur = sortedDrivers.map((item) => item.totalJamLembur);
+
+      const sortedJamKerja = sortedDrivers.map((item) => item.totalJamKerja);
+
+      /* ================= SELISIH LEMBUR ================= */
+
+      const overtimeDifferences = sortedLembur.map((value, index, arr) => {
         if (index === 0) return 0;
+
         return value - arr[index - 1];
       });
 
-      /* ================= DESTROY OLD ================= */
+      /* ================= DESTROY CHART LAMA ================= */
+
       if (overtimeLineChart) {
         overtimeLineChart.destroy();
       }
@@ -2333,6 +2410,15 @@ function generateOvertimeChart() {
 
       canvas.style.width = dynamicWidth + "px";
 
+      /* ================= DEBUG ================= */
+
+      console.log("Driver:", sortedLabels);
+
+      console.log("Lembur F:", sortedLembur);
+
+      console.log("Jam Kerja D:", sortedJamKerja);
+
+      console.log("Selisih:", overtimeDifferences);
       /* ================= LINE CHART ================= */
       overtimeLineChart = new Chart(ctx, {
         type: "line",
@@ -2343,26 +2429,26 @@ function generateOvertimeChart() {
           labels: sortedLabels,
 
           datasets: [
-            /* ================= TOTAL LEMBUR ================= */
+            /* ================= HASIL PERKALIAN LEMBUR (F) ================= */
 
             {
-              label: "Total Jam Lembur",
+              label: "Jam lembur (koversi)",
 
-              data: sortedOvertime,
+              data: sortedLembur,
 
               borderColor: "rgba(75, 192, 192, 1)",
 
               backgroundColor: "rgba(75, 192, 192, 0.2)",
 
-              tension: 0.3,
-
               fill: true,
 
-              borderWidth: 3,
+              tension: 0.35,
+
+              borderWidth: 4,
 
               pointRadius: 5,
 
-              pointHoverRadius: 7,
+              pointHoverRadius: 8,
 
               datalabels: {
                 align: "top",
@@ -2386,35 +2472,40 @@ function generateOvertimeChart() {
                   size: 11
                 },
 
-                formatter: function (value) {
-                  return value + " jam";
-                }
+                formatter: (value) => value
               }
             },
 
-            /* ================= TOTAL JAM KERJA ================= */
+            /* ================= JAM KERJA (D) ================= */
 
             {
-              label: "Total Jam Kerja",
+              label: "Jam Kerja (Kolom D)",
 
-              data: sortedWorkHours,
+              data: sortedJamKerja,
 
-              borderColor: "rgba(255, 159, 64, 1)",
+              borderColor: "#ffd600",
 
-              backgroundColor: "rgba(255, 159, 64, 0.2)",
-
-              tension: 0.3,
+              backgroundColor: "rgba(255,214,0,0.15)",
 
               fill: true,
 
-              borderWidth: 3,
+              tension: 0.35,
+
+              borderWidth: 4,
 
               pointRadius: 5,
 
-              pointHoverRadius: 7,
+              pointHoverRadius: 8,
 
               datalabels: {
-                display: false
+                align: "bottom",
+                anchor: "end",
+                color: "#b28704",
+                font: {
+                  weight: "bold",
+                  size: 11
+                },
+                formatter: (value) => value
               }
             },
 
@@ -2425,7 +2516,11 @@ function generateOvertimeChart() {
 
               data: overtimeDifferences,
 
+              yAxisID: "y1",
+
               borderColor: "rgba(255, 99, 132, 1)",
+
+              backgroundColor: "rgba(255, 99, 132, 0.2)",
 
               borderDash: [6, 4],
 
@@ -2433,14 +2528,14 @@ function generateOvertimeChart() {
 
               fill: false,
 
-              borderWidth: 2,
+              borderWidth: 3,
 
-              pointRadius: 4,
+              pointRadius: 5,
 
-              pointHoverRadius: 6,
+              pointHoverRadius: 7,
 
               datalabels: {
-                align: "bottom",
+                align: "top",
 
                 anchor: "end",
 
@@ -2458,18 +2553,17 @@ function generateOvertimeChart() {
 
                 font: {
                   weight: "bold",
-
                   size: 10
                 },
 
                 formatter: function (value, context) {
                   if (context.dataIndex === 0) {
-                    return "0j (+0%)";
+                    return "0j";
                   }
 
-                  const previous = sortedOvertime[context.dataIndex - 1];
+                  const previous = sortedLembur[context.dataIndex - 1];
 
-                  const current = sortedOvertime[context.dataIndex];
+                  const current = sortedLembur[context.dataIndex];
 
                   const diff = current - previous;
 
@@ -2479,7 +2573,7 @@ function generateOvertimeChart() {
                     percent = (diff / previous) * 100;
                   }
 
-                  return `${diff.toFixed(1)}j (${percent.toFixed(2)}%)`;
+                  return `${diff.toFixed(1)}j (${percent.toFixed(1)}%)`;
                 }
               }
             }
@@ -2496,6 +2590,13 @@ function generateOvertimeChart() {
 
             easing: "easeOutQuart"
           },
+          
+          layout: {
+
+    padding: {
+      bottom: 100
+    }
+  },
 
           plugins: {
             legend: {
@@ -2519,11 +2620,8 @@ function generateOvertimeChart() {
             x: {
               ticks: {
                 maxRotation: 35,
-
                 minRotation: 35,
-
                 autoSkip: false,
-
                 font: {
                   size: 11
                 }
@@ -2531,7 +2629,28 @@ function generateOvertimeChart() {
             },
 
             y: {
-              beginAtZero: true
+              beginAtZero: true,
+              position: "left",
+
+              title: {
+                display: true,
+                text: "Jam Kerja & Konversi Lembur"
+              }
+            },
+
+            y1: {
+              position: "right",
+
+              beginAtZero: false,
+
+              grid: {
+                drawOnChartArea: false
+              },
+
+              title: {
+                display: true,
+                text: "Selisih Antar Driver"
+              }
             }
           }
         }
@@ -2539,16 +2658,19 @@ function generateOvertimeChart() {
       /* ================= INFO ================= */
       const updateInfo = document.getElementById("updateInfo");
 
-      const totalLembur = sortedOvertime.reduce((a, b) => a + b, 0);
-      const totalJamKerja = sortedWorkHours.reduce((a, b) => a + b, 0);
+      const totalLembur = sortedLembur.reduce((a, b) => a + b, 0);
+
+      const totalJamKerja = sortedJamKerja.reduce((a, b) => a + b, 0);
 
       if (updateInfo) {
         updateInfo.innerHTML = `
-          <p><strong>Update:</strong> ${new Date().toLocaleString()}</p>
-          <p><strong>Total Driver:</strong> ${sortedLabels.length}</p>
-          <p><strong>Total Lembur:</strong> ${totalLembur} jam</p>
-          <p><strong>Total Jam Kerja:</strong> ${totalJamKerja} jam</p>
-        `;
+  <p><strong>Update:</strong> ${new Date().toLocaleString()}</p>
+  <p><strong>Total Driver:</strong> ${sortedLabels.length}</p>
+  <p><strong>Total Hasil Perkalian Lembur (F):</strong> ${totalLembur.toFixed(
+    1
+  )} jam</p>
+  <p><strong>Total Jam Kerja (D):</strong> ${totalJamKerja.toFixed(1)} jam</p>
+`;
       }
     })
 
@@ -2556,17 +2678,31 @@ function generateOvertimeChart() {
       console.error("❌ Gagal load chart:", err);
     });
 }
-
+window.addEventListener("load", loadCurrentMonthChart);
 /* ================= GLOBAL DRIVER CHART ================= */
 
 let driverChart;
 
+/* ================= FILTER BUTTON ================= */
+
+function filterdriverChart() {
+  const startDate = document.getElementById("driverChartStartDate").value;
+
+  const endDate = document.getElementById("driverChartEndDate").value;
+
+  generateDriverChart(true);
+}
+
 /* ================= GENERATE DRIVER CHART ================= */
 
-function generateDriverChart() {
+function generateDriverChart(useDateFilter = false) {
   const selectedDriver = document.getElementById("driverSelect").value;
 
   if (!selectedDriver) return;
+
+  const startDate = document.getElementById("driverChartStartDate").value;
+
+  const endDate = document.getElementById("driverChartEndDate").value;
 
   const canvas = document.getElementById("driverChart");
 
@@ -2578,13 +2714,92 @@ function generateDriverChart() {
     .then((response) => response.json())
 
     .then((data) => {
-      /* ================= FILTER DRIVER ================= */
+      /* ================= FILTER DATA ================= */
 
-      const filteredData = data.filter((row) => {
-        const driverName = row[0] || "";
+      let filteredData = data.filter((row) => {
+        const driverName = (row[0] || "").toLowerCase();
 
-        return driverName.toLowerCase().includes(selectedDriver.toLowerCase());
+        const matchDriver = driverName.includes(selectedDriver.toLowerCase());
+
+        if (!matchDriver) return false;
+
+        if (!useDateFilter || !startDate || !endDate) {
+          return true;
+        }
+
+        /* ================= FILTER TANGGAL ================= */
+
+        const rowDateObj = new Date(row[1]);
+
+        const startObj = new Date(startDate);
+
+        const endObj = new Date(endDate);
+
+        startObj.setHours(0, 0, 0, 0);
+
+        endObj.setHours(23, 59, 59, 999);
+
+        console.log(
+          "Driver:",
+          row[0],
+          "Tanggal:",
+          rowDateObj,
+          "Start:",
+          startObj,
+          "End:",
+          endObj
+        );
+
+        return rowDateObj >= startObj && rowDateObj <= endObj;
       });
+
+      /* ================= SORT TANGGAL ================= */
+
+      filteredData.sort((a, b) => {
+        return new Date(a[1]) - new Date(b[1]);
+      });
+
+      console.log("Data setelah filter:", filteredData.length);
+
+      /* ================= DESTROY OLD CHART ================= */
+
+      if (driverChart) {
+        driverChart.destroy();
+      }
+
+      /* ================= JIKA TIDAK ADA DATA ================= */
+
+      if (filteredData.length === 0) {
+        driverChart = new Chart(ctx, {
+          type: "bar",
+
+          data: {
+            labels: ["Tidak Ada Data"],
+
+            datasets: [
+              {
+                label: "Overtime",
+                data: [0],
+                backgroundColor: "rgba(200,200,200,0.7)"
+              }
+            ]
+          },
+
+          options: {
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+              legend: {
+                display: false
+              }
+            }
+          }
+        });
+
+        return;
+      }
 
       /* ================= LABEL ================= */
 
@@ -2593,36 +2808,18 @@ function generateDriverChart() {
 
         const hari = row[2] || "-";
 
-        let tanggal = "-";
-
-        /* ================= FORMAT TANGGAL ================= */
-
-        if (rawTanggal) {
-          const date = new Date(rawTanggal);
-
-          tanggal = date.toLocaleDateString("id-ID", {
-            day: "numeric",
-
-            month: "long",
-
-            year: "numeric"
-          });
-        }
+        const tanggal = new Date(rawTanggal).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
 
         return `${hari} - ${tanggal}`;
       });
 
-      /* ================= LEMBUR ================= */
+      /* ================= OVERTIME ================= */
 
-      const overtimeData = filteredData.map((row) => {
-        return parseFloat(row[5]) || 0;
-      });
-
-      /* ================= DESTROY OLD ================= */
-
-      if (driverChart) {
-        driverChart.destroy();
-      }
+      const overtimeData = filteredData.map((row) => parseFloat(row[5]) || 0);
 
       /* ================= AUTO WIDTH ================= */
 
@@ -2638,7 +2835,7 @@ function generateDriverChart() {
         plugins: [ChartDataLabels],
 
         data: {
-          labels: labels,
+          labels,
 
           datasets: [
             {
@@ -2646,9 +2843,9 @@ function generateDriverChart() {
 
               data: overtimeData,
 
-              backgroundColor: "rgba(54, 162, 235, 0.7)",
+              backgroundColor: "rgba(54,162,235,0.7)",
 
-              borderColor: "rgba(54, 162, 235, 1)",
+              borderColor: "rgba(54,162,235,1)",
 
               borderWidth: 2,
 
@@ -2666,6 +2863,12 @@ function generateDriverChart() {
             duration: 1500
           },
 
+          layout: {
+            padding: {
+              bottom: 100
+            }
+          },
+
           plugins: {
             legend: {
               position: "top"
@@ -2674,7 +2877,7 @@ function generateDriverChart() {
             tooltip: {
               callbacks: {
                 label: function (context) {
-                  return `${context.raw} jam`;
+                  return context.raw + " jam";
                 }
               }
             },
@@ -2690,9 +2893,7 @@ function generateDriverChart() {
                 weight: "bold"
               },
 
-              formatter: function (value) {
-                return value + " jam";
-              }
+              formatter: (value) => value + " jam"
             }
           },
 
@@ -2708,7 +2909,13 @@ function generateDriverChart() {
             },
 
             y: {
-              beginAtZero: true
+              beginAtZero: true,
+
+              title: {
+                display: true,
+
+                text: "Jam Lembur"
+              }
             }
           }
         }
@@ -2719,7 +2926,6 @@ function generateDriverChart() {
       console.error("❌ Gagal load driver chart:", err);
     });
 }
-
 function updateHariDinas() {
   const tanggal = document.getElementById("dlTanggal").value;
 

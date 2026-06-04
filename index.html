@@ -140,7 +140,7 @@
         <div class="header-left">
 
           <h1>
-            Dashboard Driver Overtime Control
+            General Service Driver Overtime Control
           </h1>
 
           <!-- ================= LINKS ================= -->
@@ -819,6 +819,7 @@
       </div>
       <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
       <!-- ================= CHART SECTION ================= -->
 
       <div id="chartSection" style="display:none; margin-top:30px;">
@@ -830,6 +831,24 @@
           </h3>
 
           <div class="chart-wrapper">
+
+            <div class="chart-filter">
+
+              <label>Dari</label>
+              <input type="date" id="chartStartDate">
+
+              <label>Sampai</label>
+              <input type="date" id="chartEndDate">
+
+              <button onclick="filterOvertimeChart()">
+                Filter
+              </button>
+
+              <button onclick="loadCurrentMonthChart()">
+                Bulan Berjalan
+              </button>
+
+            </div>
 
             <canvas id="overtimeLineChart"></canvas>
 
@@ -921,10 +940,23 @@
 
           <div class="chart-wrapper">
 
+            <div class="driver-chart-filter">
+
+              <label>Dari</label>
+              <input type="date" id="driverChartStartDate">
+
+              <label>Sampai</label>
+              <input type="date" id="driverChartEndDate">
+
+              <button onclick="filterdriverChart()">
+                Filter
+              </button>
+
+            </div>
+
             <canvas id="driverChart"></canvas>
 
           </div>
-
         </div>
 
       </div>

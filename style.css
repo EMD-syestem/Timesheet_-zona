@@ -1317,10 +1317,118 @@ body {
   padding-bottom: 10px;
 }
 
+/* ================= CHART FILTER ================= */
+
+.chart-filter{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  margin-bottom:20px;
+  padding:15px;
+  background:#f8fafc;
+  border:1px solid #dbe4ee;
+  border-radius:12px;
+}
+
+.chart-filter label{
+  font-size:14px;
+  font-weight:600;
+  color:#374151;
+}
+
+.chart-filter input[type="date"]{
+  padding:8px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  font-size:14px;
+  background:#fff;
+  color:#333;
+  outline:none;
+  transition:all .3s ease;
+}
+
+.chart-filter input[type="date"]:focus{
+  border-color:#3b82f6;
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* ================= BUTTON ================= */
+
+.chart-filter button{
+  padding:10px 18px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  color:#fff;
+  transition:all .3s ease;
+}
+
+/* Tombol Filter */
+
+.chart-filter button:first-of-type{
+  background:#2563eb;
+}
+
+.chart-filter button:first-of-type:hover{
+  background:#1d4ed8;
+  transform:translateY(-2px);
+  box-shadow:0 6px 12px rgba(37,99,235,.25);
+}
+
+/* Tombol Bulan Berjalan */
+
+.chart-filter button:last-of-type{
+  background:#10b981;
+}
+
+.chart-filter button:last-of-type:hover{
+  background:#059669;
+  transform:translateY(-2px);
+  box-shadow:0 6px 12px rgba(16,185,129,.25);
+}
+
+.chart-filter button:active{
+  transform:scale(.96);
+}
+
+/* ================= CHART WRAPPER ================= */
+
+.chart-wrapper{
+  width:100%;
+  height:600px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  position:relative;
+}
 /* ================= CANVAS ================= */
 
-#overtimeLineChart {
-  height: 500px !important;
+#overtimeLineChart{
+  min-width:1200px;
+  width:100% !important;
+  height:100% !important;
+  display:block;
+}
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:768px){
+
+  .chart-filter{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .chart-filter input,
+  .chart-filter button{
+    width:100%;
+  }
+
+  #overtimeLineChart{
+    min-width:900px;
+    height:400px !important;
+  }
 }
 
 #driverMatrixTable {
@@ -1505,4 +1613,42 @@ body {
 .delete-btn:hover {
 
   background: #bb2d3b;
+}
+
+.driver-chart-filter{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+  padding:15px;
+  background:#f8f9fa;
+  border:1px solid #dbe2ea;
+  border-radius:12px;
+}
+
+.driver-chart-filter label{
+  font-weight:600;
+}
+
+.driver-chart-filter input[type="date"]{
+  padding:8px 12px;
+  border:1px solid #cfd8dc;
+  border-radius:8px;
+}
+
+.driver-chart-filter button{
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  background:#10b981;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.driver-chart-filter button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 10px rgba(0,0,0,.2);
 }
